@@ -7,10 +7,12 @@ const labdata = require('../lib/labdata');
 const { guideView } = require('../lib/guide');
 
 const root = path.join(__dirname, '..');
-const sampleRoot = path.join(root, 'sample-data');
+const sampleRoot = path.resolve(root, 'sample-data');
+const fixtureRoot = path.resolve(__dirname, 'fixtures');
 const commandsPath = path.join(sampleRoot, 'wiki', 'commands.json');
 const jsonlPath = path.join(sampleRoot, 'skills', 'lab-runs.jsonl');
-const fixturePath = path.join(__dirname, 'fixtures', 'nondev-api-brief.txt');
+const fixturePath = path.join(fixtureRoot, 'nondev-api-brief.txt');
+const ALLOWED_ROOTS = [sampleRoot, fixtureRoot];
 
 const FORBIDDEN_SKILLS = [
   'graphify',
@@ -31,9 +33,25 @@ const FINGERPRINTS = [
   '116.7', '125.2', '149.8', '166.1', '195.3', '158167', '180568',
 ];
 
+function assertAllowed(file) {
+  const full = path.resolve(file);
+  const ok = ALLOWED_ROOTS.some((dir) => full === dir || full.startsWith(dir + path.sep));
+  assert.ok(ok, `not under sample-data or test/fixtures: ${full}`);
+}
+
 function readUtf8(file) {
-  assert.ok(!file.includes(`${path.sep}.devlog${path.sep}`) && !file.endsWith(`${path.sep}.devlog`));
+  assertAllowed(file);
   return fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+}
+
+function listFiles(dir) {
+  const out = [];
+  for (const ent of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+    const full = path.join(dir, ent.name);
+    if (ent.isDirectory()) out.push(...listFiles(full));
+    else out.push(full);
+  }
+  return out;
 }
 
 function findItem(guide, id) {
@@ -58,12 +76,13 @@ function catalogItem(commands, id) {
 
 function assertNoLiveIds(text, label) {
   assert.ok(!text.includes('인피'), `${label}: 인피`);
-  assert.ok(!text.toLowerCase().includes('infi-mall'), `${label}: infi-mall`);
+  const lower = text.toLowerCase();
+  assert.ok(!lower.includes('infi-mall'), `${label}: infi-mall`);
   assert.ok(!/\bINFI\b/i.test(text), `${label}: INFI word`);
-  assert.ok(!text.includes('choisk'), `${label}: choisk`);
-  assert.ok(!text.includes('C:\\Users'), `${label}: C:\\Users`);
-  assert.ok(!text.includes('C:\\\\Users'), `${label}: C:\\\\Users`);
-  assert.ok(!text.includes('C:/Users'), `${label}: C:/Users`);
+  assert.ok(!lower.includes('choisk'), `${label}: choisk`);
+  assert.ok(!lower.includes('c:\\users'), `${label}: C:\\Users`);
+  assert.ok(!lower.includes('c:\\\\users'), `${label}: C:\\\\Users`);
+  assert.ok(!lower.includes('c:/users'), `${label}: C:/Users`);
 }
 
 function assertNoFingerprints(text, label) {
@@ -78,20 +97,24 @@ test('sample commands.json workdir 는 빈 문자열', () => {
 });
 
 test('sample-data 와 픽스처에 식별자가 없다', () => {
-  const commandsText = readUtf8(commandsPath);
-  const jsonlText = readUtf8(jsonlPath);
   const fixtureText = readUtf8(fixturePath);
-  assertNoLiveIds(commandsText, 'commands.json');
-  assertNoLiveIds(jsonlText, 'lab-runs.jsonl');
   assertNoLiveIds(fixtureText, 'fixture');
-  assert.ok(!commandsText.includes('@'), 'commands.json: @');
   assert.ok(!fixtureText.includes('@'), 'fixture: @');
+  for (const file of listFiles(sampleRoot)) {
+    const text = readUtf8(file);
+    const rel = path.relative(sampleRoot, file);
+    assertNoLiveIds(text, rel);
+    if (path.basename(file) === 'commands.json') {
+      assert.ok(!text.includes('@'), `${rel}: @`);
+    }
+  }
 });
 
 test('sample-data 와 픽스처에 실측 지문이 없다', () => {
-  assertNoFingerprints(readUtf8(commandsPath), 'commands.json');
-  assertNoFingerprints(readUtf8(jsonlPath), 'lab-runs.jsonl');
   assertNoFingerprints(readUtf8(fixturePath), 'fixture');
+  for (const file of listFiles(sampleRoot)) {
+    assertNoFingerprints(readUtf8(file), path.relative(sampleRoot, file));
+  }
 });
 
 test('픽스처 첫 문단에만 금지 스킬 이름이 있다', () => {
