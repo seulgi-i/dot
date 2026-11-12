@@ -36,6 +36,29 @@ test('scoreboard: 판정·오염·미실험·이번 주 개수', () => {
   assert.strictEqual(b.rows[0].skill, 'good');
 });
 
+test('scoreboard: 같은 날짜 두 줄은 파일의 나중 줄이 이긴다', () => {
+  // 같은 날짜 비교는 0이라 ES2019 안정 정렬이 파일 순서를 유지한다.
+  const dev = fs.mkdtempSync(path.join(os.tmpdir(), 'dot-ld-'));
+  const skills = path.join(dev, 'skills');
+  fs.mkdirSync(skills, { recursive: true });
+  const a = { quality: 4, nonCache: 1000, activeSec: 100, rejects: 0, testsPass: true };
+  const first = {
+    date: '2026-11-12', skill: 'same-date', task: 'same-task',
+    a, b: { quality: 4, nonCache: 1000, activeSec: 100, rejects: 0, testsPass: true },
+  };
+  const later = {
+    date: '2026-11-12', skill: 'same-date', task: 'same-task',
+    a, b: { quality: 4, nonCache: 700, activeSec: 100, rejects: 0, testsPass: true },
+  };
+  fs.writeFileSync(path.join(skills, 'lab-runs.jsonl'), [first, later].map((l) => JSON.stringify(l)).join('\n') + '\n');
+  const b = ld.scoreboard(dev, { today: '2026-11-12' });
+  const row = b.rows.find((r) => r.skill === 'same-date');
+  assert.ok(row);
+  assert.strictEqual(row.label, '써야 함');
+  assert.strictEqual(row.tokenPct, -30);
+  assert.strictEqual(row.n, 2);
+});
+
 test('prompts: 파일 없으면 빈 배열', () => {
   const dev = fs.mkdtempSync(path.join(os.tmpdir(), 'dot-ld-'));
   assert.deepStrictEqual(ld.prompts(dev), []);

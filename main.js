@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const labdata = require('./lib/labdata');
 const { isInsideDevlog } = require('./lib/opencard-path');
+const { buildLoadPayload } = require('./lib/load-payload');
 
 function readConfig() {
   try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8')); } catch { return {}; }
@@ -27,13 +28,17 @@ function createWindow() {
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 
-ipcMain.handle('load', () => ({
-  board: labdata.scoreboard(devlog, { skillsRoot: config.skillsRoot || undefined }),
-  prompts: labdata.prompts(devlog),
-  wikiCommands: labdata.wikiCommands(devlog),
-  applyToday: labdata.applyToday(devlog),
-  loadedAt: new Date().toISOString(),
-}));
+ipcMain.handle('load', () => {
+  const board = labdata.scoreboard(devlog, { skillsRoot: config.skillsRoot || undefined });
+  return buildLoadPayload({
+    config,
+    board,
+    commands: labdata.wikiCommands(devlog),
+    prompts: labdata.prompts(devlog),
+    applyToday: labdata.applyToday(devlog),
+    loadedAt: new Date().toISOString(),
+  });
+});
 ipcMain.handle('copy', (_e, text) => { clipboard.writeText(String(text || '')); return true; });
 ipcMain.handle('openCard', (_e, rel) => {
   const full = path.resolve(devlog, String(rel || ''));
