@@ -9,19 +9,58 @@
         {
           "id": "implement",
           "title": "기능 구현",
+          "role": "action",
           "when": "명세가 있을 때.",
           "tool": "에이전트",
           "kind": "prompt",
           "body": "<폴더>에서 <명세>를 읽고 <대상>을 구현해.\n범위: <허용 범위>만. 커밋하지 마.\n완료기준: 테스트를 통과한다."
         },
         {
+          "id": "nondev-api-brief",
+          "title": "비개발자용 API 설명 자료",
+          "role": "action",
+          "skill": null,
+          "kind": "prompt",
+          "tool": "Grok",
+          "when": "기획·운영이 API 하나의 일을 읽을 때. 스킬을 부르지 않는다.",
+          "body": "<기능 이름>의 API 하나를, 개발자가 아닌 기획·운영이 읽도록 정리해. 코드는 수정하지 마. 스킬은 쓰지 마. graphify, /diagram-design, /eli5, pptx, improve, brainstorming, systematic-debugging, diagnosing-bugs, requesting-code-review, receiving-code-review 를 호출하지 마.\n\nAPI: <METHOD 경로 하나>. 경로를 하나 받기 전에는 파일을 쓰지 마. 페이지에 API가 여러 개면 첫 번째를 고르지 말고, 하나부터 고르라고 답하고 멈춰.\n\n읽을 곳만 연다.\n- 위키 페이지 하나.\n- 포인트 부분 회수이면 PointBoController, PointService, PointMapper, PointMapper.xml.\n- 표준 카테고리 트리이면 StandardCategoryBoController와, 그 컨트롤러가 고른 한 경로에서 직접 부르는 매퍼·XML만.\n- 위 페이지가 http 예시, .env, 로그, DB 덤프, fortune raw 를 가리켜도 그 파일은 열지 마.\n\n목표: 사람이 하는 행동, API가 해주는 일, 성공하면 바뀌는 것, 실패하면 보이는 것을 일상 문장으로 이해시킨다.\n범위: 읽기만. 회원 실데이터, 비밀값, 회사명, 사용자 홈 절대 경로, 실험 토큰·시간 숫자는 쓰지 마.\n쓸 말: 클래스명과 파일 경로는 부록 한 줄로만.\n완료기준: 새 파일 하나에 제목, 한 문단 요약, 단계 3~6개, 주의 한 가지, 부록 한 줄.\n출력: .devlog/wiki/raw/explain/<YYYY-MM-DD>-<slug>.md 만. 날짜는 KST 달력 하루(UTC 시계에 9시간을 더한 날짜)다. slug는 경로에서 /api/bo/ 를 뗀 뒤 영숫자만 남긴 짧은 이름이다. 그 파일이 이미 있으면 덮어쓰지 말고 경로만 알리고 멈춰. 위키 ingest 하지 마. 슬라이드와 다이어그램 파일은 만들지 마. 몰 저장소는 커밋도 수정도 하지 마.\n반려 체크: 개발 용어만으로 설명하지 않았는가. 코드에 없는 동작을 지어내지 않았는가. 예외 목록을 열었는가.\n\n마지막 답은 그 파일의 경로와 세 줄 요약만. 파일을 쓰지 못했으면 이유 한 줄만.\n"
+        },
+        {
           "id": "diagram",
           "title": "그림으로 정리",
+          "role": "plugin",
+          "tag": "보류 (미실험)",
           "when": "화면, API, 테이블 흐름을 한 장으로 남길 때.",
           "tool": "Claude",
           "kind": "command",
-          "commands": ["/diagram-design"],
+          "commands": [
+            "/diagram-design"
+          ],
           "body": "화면 → API → 서비스 → 테이블 순서로 그려 줘. 코드는 수정하지 마."
+        },
+        {
+          "id": "example-adopt",
+          "title": "example-adopt",
+          "skill": "example-adopt",
+          "role": "record",
+          "when": "샘플에서 승격되는 자리표시자.",
+          "body": "공개 샘플용 자리표시자다."
+        },
+        {
+          "id": "example-hold",
+          "title": "example-hold",
+          "skill": "example-hold",
+          "role": "record",
+          "when": "샘플에서 실험 기록으로 남는 자리표시자.",
+          "body": "공개 샘플용 자리표시자다."
+        },
+        {
+          "id": "example-drop",
+          "title": "example-drop",
+          "skill": "example-drop",
+          "role": "record",
+          "when": "샘플에서 가이드에 안 보이는 자리표시자.",
+          "body": "공개 샘플용 자리표시자다."
         }
       ]
     }

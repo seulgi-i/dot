@@ -1,1 +1,4 @@
-
+{"date":"2026-11-12","skill":"example-adopt","task":"sample-task","source":"sample","a":{"quality":4,"nonCache":1000,"activeSec":100},"b":{"quality":4,"nonCache":1000,"activeSec":100}}
+{"date":"2026-11-12","skill":"example-adopt","task":"sample-task","source":"sample","a":{"quality":4,"nonCache":1000,"activeSec":100},"b":{"quality":4,"nonCache":700,"activeSec":100}}
+{"date":"2026-11-12","skill":"example-hold","task":"sample-task","source":"sample","a":{"quality":4,"nonCache":1000,"activeSec":100},"b":{"quality":4.2,"nonCache":1100,"activeSec":100}}
+{"date":"2026-11-12","skill":"example-drop","task":"sample-task","source":"sample","a":{"quality":4,"nonCache":1000,"activeSec":100},"b":{"quality":4,"nonCache":1600,"activeSec":100}}
