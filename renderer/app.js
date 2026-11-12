@@ -40,8 +40,8 @@ function renderPrompts(list) {
   return el('div', { class: 'acc-list' }, list.map((p) => acc(
     [el('span', { class: 'acc-title', text: p.title || p.id || '' }), p.skill ? el('span', { class: 'chip tag', text: p.skill }) : null],
     [
-      p.when ? el('div', { class: 'when', text: p.when }) : null,
-      p.body ? el('pre', { text: p.body }) : null,
+      p.when ? noteBlock('설명', p.when) : null,
+      p.body ? promptBlock(p.body) : null,
       p.evidence ? el('div', { class: 'evidence', text: p.evidence }) : null,
       el('div', { class: 'row' }, copyBtn(p.body || '', '복사')),
     ]
@@ -95,6 +95,18 @@ function tagClass(tag) {
   return 'tag';
 }
 
+function noteBlock(label, text) {
+  return el('div', { class: 'desc-block' },
+    el('div', { class: 'block-label', text: label }),
+    el('div', { class: 'when', text: text || '' }));
+}
+
+function promptBlock(text) {
+  return el('div', { class: 'prompt-block' },
+    el('div', { class: 'block-label', text: '프롬프트' }),
+    el('pre', { text: text || '' }));
+}
+
 function renderItemCard(item, workdir) {
   const cmds = Array.isArray(item.commands) ? item.commands : (item.command ? [item.command] : []);
   const useDir = item.useWorkdir && workdir;
@@ -105,9 +117,9 @@ function renderItemCard(item, workdir) {
       item.tool ? el('span', { class: 'chip tool', text: item.tool }) : null,
     ],
     [
-      item.when ? el('div', { class: 'when', text: item.when }) : null,
+      item.when ? noteBlock('설명', item.when) : null,
       cmds.map((c) => commandBlock(String(c), useDir ? workdir : '')),
-      item.body ? el('pre', { text: item.body }) : null,
+      item.body ? promptBlock(item.body) : null,
       item.body ? el('div', { class: 'row' }, copyBtn(item.body, '프롬프트 복사')) : null,
     ]
   );
@@ -124,7 +136,7 @@ const QUICK = [
     { tool: 'Claude · Grok', cmd: '/context', note: '창을 채운 것' },
   ]},
   { title: '시각화', rows: [
-    { tool: 'Claude', cmd: '/diagram-design', note: '아키텍처·시퀀스·ER' },
+    { tool: 'Claude', cmd: '/diagram-design', note: '그림만. 설명 글은 목록' },
   ]},
 ];
 
