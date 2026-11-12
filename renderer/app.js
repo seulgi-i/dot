@@ -107,16 +107,31 @@ function promptBlock(text) {
     el('pre', { text: text || '' }));
 }
 
-function renderItemCard(item, workdir) {
+function renderItemCard(item, workdir, opts) {
   const cmds = Array.isArray(item.commands) ? item.commands : (item.command ? [item.command] : []);
   const useDir = item.useWorkdir && workdir;
+  const filterOff = !opts || opts.filterOff;
+  let chip = null;
+  const extras = [];
+  if (filterOff) {
+    chip = item.tag ? el('span', { class: 'chip ' + tagClass(item.tag), text: item.tag }) : null;
+  } else {
+    if (item.verdictLabel) {
+      chip = el('span', { class: 'chip ' + (chipClass[item.verdictLabel] || 'none'), text: item.verdictLabel });
+    }
+    if (item.tag && item.verdictLabel && item.tag !== item.verdictLabel) {
+      extras.push(el('div', { class: 'sub', text: '목록 태그: ' + item.tag }));
+    }
+    if (item.detail) extras.push(el('div', { class: 'sub', text: item.detail }));
+  }
   return acc(
     [
       el('span', { class: 'acc-title', text: item.title || item.id || '' }),
-      item.tag ? el('span', { class: 'chip ' + tagClass(item.tag), text: item.tag }) : null,
+      chip,
       item.tool ? el('span', { class: 'chip tool', text: item.tool }) : null,
     ],
     [
+      extras,
       item.when ? noteBlock('설명', item.when) : null,
       cmds.map((c) => commandBlock(String(c), useDir ? workdir : '')),
       item.body ? promptBlock(item.body) : null,
@@ -139,11 +154,13 @@ const QUICK = [
     { tool: 'Claude', cmd: '/diagram-design', note: '그림만. 설명 글은 목록' },
   ]},
 ];
+// 필터 켜면 /diagram-design 은 레일에 두지 않는다. 세션 카드는 아코디언에 남는다.
+const QUICK_SESSION = QUICK.filter((g) => g.title !== '시각화');
 
-function renderQuick() {
+function renderQuick(groups) {
   return el('aside', { class: 'quick-pop' },
     el('div', { class: 'quick-head', text: '바로 쓰기' }),
-    QUICK.map((g) => el('div', { class: 'quick-group' },
+    (groups || QUICK).map((g) => el('div', { class: 'quick-group' },
       el('div', { class: 'quick-title', text: g.title }),
       g.rows.map((r) => el('button', {
         class: 'quick-row',
@@ -155,8 +172,9 @@ function renderQuick() {
         el('span', { class: 'quick-note', text: r.note }))))));
 }
 
-function renderWiki(data) {
+function renderWiki(data, opts) {
   const d = data || {};
+  const filterOff = !opts || opts.filterOff;
   const workdir = d.workdir || '';
   const sections = Array.isArray(d.sections) ? d.sections : [];
   const situations = Array.isArray(d.situations) ? d.situations : [];
@@ -171,19 +189,25 @@ function renderWiki(data) {
       el('pre', { text: cd }),
       el('div', { class: 'row' }, copyBtn(cd, '복사'))));
   }
+  const visible = (items) => {
+    const list = Array.isArray(items) ? items : [];
+    return filterOff ? list : list.filter((item) => item.surface !== 'hidden');
+  };
   for (const sec of sections) {
     const secBody = [];
-    if (sec.intro) secBody.push(el('p', { class: 'legend', text: sec.intro }));
+    const intro = sec.intro || (!filterOff && sec.id === 'lab-record' ? '기본 도구가 아니다. n=1은 참고용. 판정은 성적표와 같다.' : '');
+    if (intro) secBody.push(el('p', { class: 'legend', text: intro }));
     const groups = [];
-    if (Array.isArray(sec.items) && sec.items.length) groups.push({ title: '', items: sec.items });
+    const secItems = visible(sec.items);
+    if (secItems.length) groups.push({ title: '', items: secItems });
     if (Array.isArray(sec.groups)) {
-      for (const g of sec.groups) groups.push(g);
+      for (const g of sec.groups) groups.push({ title: g.title, items: visible(g.items) });
     }
     for (const g of groups) {
       const gItems = Array.isArray(g.items) ? g.items : [];
       if (!gItems.length) continue;
       if (g.title) secBody.push(el('h3', { class: 'group-title', text: g.title }));
-      secBody.push(el('div', { class: 'acc-list' }, gItems.map((item) => renderItemCard(item, workdir))));
+      secBody.push(el('div', { class: 'acc-list' }, gItems.map((item) => renderItemCard(item, workdir, { filterOff }))));
     }
     const qgroups = Array.isArray(sec.questions) ? sec.questions : [];
     if (qgroups.length) {
@@ -204,6 +228,7 @@ function renderWiki(data) {
       })));
     }
     const n = groups.reduce((s, g) => s + ((g.items && g.items.length) || 0), 0) + qgroups.length;
+    if (!filterOff && !n && !intro) continue;
     parts.push(acc(
       [el('span', { class: 'acc-title', text: sec.title || sec.id || '' }), el('span', { class: 'sub', text: n ? String(n) : '' })],
       secBody
@@ -248,7 +273,7 @@ function renderWiki(data) {
   if (!parts.length) parts.push(el('div', { class: 'empty', text: '접어 둔 목록이 없어. 오른쪽에서 바로 복사하면 된다.' }));
   return el('div', { class: 'guide-layout' },
     el('div', { class: 'guide-main' }, parts),
-    renderQuick());
+    renderQuick(filterOff ? QUICK : QUICK_SESSION));
 }
 
 
@@ -281,21 +306,35 @@ function renderToday(data) {
   })));
 }
 
+function wikiCommandCount(wiki) {
+  const n = (wiki && (wiki.sections || []).reduce((n, sec) => n + ((sec.items || []).length) + ((sec.groups || []).reduce((m, g) => m + ((g.items || []).length), 0)), 0)) || 0;
+  return n || ((wiki && (wiki.situations || []).length) || 0);
+}
+
 async function refresh() {
   const btn = $('refresh'); btn.disabled = true;
   try {
     const data = await window.dot.load();
-    const key = JSON.stringify([data.board, data.prompts, data.wikiCommands, data.applyToday]);
+    const key = JSON.stringify([data.board, data.prompts, data.wikiCommands, data.applyToday, data.guide, data.guideFilter]);
     $('headline').innerHTML = '';
     const todayN = (data.applyToday && Array.isArray(data.applyToday.cards)) ? data.applyToday.cards.length : 0;
-    $('headline').append('이번 주 써야 함 ', el('b', { text: String(data.board.mustUseThisWeek) + '개' }), el('span', { class: 'sub', text: `  · 오늘 카드 ${todayN}개 · 스킬 ${data.board.rows.length}개 · 프롬프트 ${data.prompts.length}개 · 명령 ${((data.wikiCommands && (data.wikiCommands.sections || []).reduce((n, sec) => n + ((sec.items || []).length) + ((sec.groups || []).reduce((m, g) => m + ((g.items || []).length), 0)), 0)) || ((data.wikiCommands && (data.wikiCommands.situations || []).length) || 0))}개` }));
+    const filterOff = data.guideFilter === false || !data.guide;
+    const counts = (data.guide && data.guide.counts) || {};
+    const cmdN = filterOff ? wikiCommandCount(data.wikiCommands) : (counts.default || 0);
+    let extra = '';
+    if (filterOff) extra = ' · 필터 꺼짐';
+    else {
+      extra = ` · 실험 기록 ${counts.lab || 0}개`;
+      if (counts.hidden) extra += ` · 숨김 ${counts.hidden}개`;
+    }
+    $('headline').append('이번 주 써야 함 ', el('b', { text: String(data.board.mustUseThisWeek) + '개' }), el('span', { class: 'sub', text: `  · 오늘 카드 ${todayN}개 · 스킬 ${data.board.rows.length}개 · 프롬프트 ${data.prompts.length}개 · 명령 ${cmdN}개${extra}` }));
     if (key !== state.lastKey) {
       state.lastKey = key;
       const y = window.scrollY;
       $('view-today').replaceChildren(renderToday(data.applyToday));
       $('view-prompts').replaceChildren(renderPrompts(data.prompts));
       $('view-skills').replaceChildren(renderSkills(data.board));
-      $('view-wiki').replaceChildren(renderWiki(data.wikiCommands));
+      $('view-wiki').replaceChildren(renderWiki(filterOff ? data.wikiCommands : data.guide, { filterOff }));
       window.scrollTo(0, y);
     }
   } catch (e) {
