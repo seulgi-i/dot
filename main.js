@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, shell, clipboard } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const labdata = require('./lib/labdata');
+const { isInsideDevlog } = require('./lib/opencard-path');
 
 function readConfig() {
   try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8')); } catch { return {}; }
@@ -36,7 +37,7 @@ ipcMain.handle('load', () => ({
 ipcMain.handle('copy', (_e, text) => { clipboard.writeText(String(text || '')); return true; });
 ipcMain.handle('openCard', (_e, rel) => {
   const full = path.resolve(devlog, String(rel || ''));
-  if (!full.startsWith(path.resolve(devlog))) return false;
+  if (!isInsideDevlog(devlog, full)) return false;
   return shell.openPath(full).then((err) => !err);
 });
 
