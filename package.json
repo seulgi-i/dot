@@ -1,0 +1,16 @@
+{
+  "name": "dot",
+  "productName": "Dot",
+  "private": true,
+  "version": "2.0.0",
+  "description": "좋은 프롬프트와 좋은 스킬만 보여주는 대시보드",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^33.2.0"
+  }
+}

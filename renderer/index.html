@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; font-src 'self'; script-src 'self'">
+  <title>Dot</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="chrome">
+  <div class="titlebar">
+    <div class="brand">Dot</div>
+    <div class="titlebar-space"></div>
+    <div class="win-btns">
+      <button type="button" id="win-min" title="최소화" aria-label="최소화">&#x2013;</button>
+      <button type="button" id="win-close" class="win-close" title="닫기" aria-label="닫기">&#x2715;</button>
+    </div>
+  </div>
+  <header class="top">
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="today" role="tab">오늘</button>
+      <button class="tab" data-view="prompts" role="tab">추천 프롬프트</button>
+      <button class="tab" data-view="skills" role="tab">스킬 성적표</button>
+      <button class="tab" data-view="wiki" role="tab">명령어 가이드</button>
+    </nav>
+    <div class="headline" id="headline">불러오는 중…</div>
+    <button class="refresh" id="refresh" title="새로고침">↻</button>
+  </header>
+  </div>
+  <main>
+    <section id="view-today" class="view"></section>
+    <section id="view-prompts" class="view hidden"></section>
+    <section id="view-skills" class="view hidden"></section>
+    <section id="view-wiki" class="view hidden"></section>
+  </main>
+  <div class="toast hidden" id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "name": "dot",
+  "productName": "Dot",
+  "version": "1.0.0",
+  "description": "오늘의 개발·하네스·Todo·자료를 한 화면에",
+  "main": "index.js"
+}

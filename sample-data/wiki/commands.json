@@ -1,0 +1,29 @@
+{
+  "workdir": "",
+  "intro": "예시 목록이다. 내 기록 폴더를 쓰려면 config.json 의 devlog 를 채운다.",
+  "sections": [
+    {
+      "id": "do",
+      "title": "뭘 하고 싶을 때",
+      "items": [
+        {
+          "id": "implement",
+          "title": "기능 구현",
+          "when": "명세가 있을 때.",
+          "tool": "에이전트",
+          "kind": "prompt",
+          "body": "<폴더>에서 <명세>를 읽고 <대상>을 구현해.\n범위: <허용 범위>만. 커밋하지 마.\n완료기준: 테스트를 통과한다."
+        },
+        {
+          "id": "diagram",
+          "title": "그림으로 정리",
+          "when": "화면, API, 테이블 흐름을 한 장으로 남길 때.",
+          "tool": "Claude",
+          "kind": "command",
+          "commands": ["/diagram-design"],
+          "body": "화면 → API → 서비스 → 테이블 순서로 그려 줘. 코드는 수정하지 마."
+        }
+      ]
+    }
+  ]
+}
